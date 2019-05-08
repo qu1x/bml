@@ -23,8 +23,8 @@ categories = [
 ]
 license = "Fair"
 include = [
-	"src/bin.rs",
 	"src/lib.rs",
+	"src/bml.pest",
 	"Cargo.toml",
 	"README.md",
 	"RELEASES.md",
