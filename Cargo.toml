@@ -1,0 +1,38 @@
+[package]
+name = "bml"
+version = "0.1.0"
+authors = ["Rouven Spreckels <n3vu0r@qu1x.org>"]
+edition = "2018"
+description = "BML Markup Language"
+documentation = "https://docs.rs/bml"
+homepage = "https://qu1x.org/bml"
+repository = "https://github.com/qu1x/bml"
+readme = "README.md"
+keywords = [
+	"bml",
+	"markup-language",
+	"icarus-database",
+	"higan-manifest",
+	"bsnes-manifest",
+]
+categories = [
+	"command-line-utilities",
+	"parser-implementations",
+	"encoding",
+	"config",
+]
+license = "Fair"
+include = [
+	"src/bin.rs",
+	"src/lib.rs",
+	"Cargo.toml",
+	"README.md",
+	"RELEASES.md",
+]
+
+[badges]
+travis-ci = { repository = "qu1x/bml" }
+
+[dependencies]
+pest = "2"
+pest_derive = "2"
