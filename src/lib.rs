@@ -89,9 +89,8 @@ impl BmlNode {
 		self.data.lines()
 	}
 	/// Iterator over child nodes as `(name, node)` tuples.
-	pub fn nodes(&self) -> impl Iterator<Item = (&String, &BmlNode)> {
-		// TODO Remove `map()` when using ordered multi map.
-		self.node.iter().map(|(name, node)| (name, node))
+	pub fn nodes(&self) -> impl Iterator<Item = (&str, &BmlNode)> {
+		self.node.iter().map(|(name, node)| (name.as_str(), node))
 	}
 	/// Iterator over child nodes of `name`.
 	pub fn named(&self, name: &str) -> impl Iterator<Item = &BmlNode> {
