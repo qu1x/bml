@@ -65,9 +65,12 @@
 
 pub use pest::Parser;
 pub use std::str::FromStr;
+use std::fmt;
 
 use pest::error::Error;
 use pest::iterators::Pair;
+
+use BmlKind::*;
 
 /// BML node comprising data `lines()` and child `nodes()`.
 ///
@@ -97,17 +100,75 @@ impl BmlNode {
 		self.node.iter().filter_map(move |(k, v)|
 			if k == &name { Some(v) } else { None })
 	}
+	pub fn set_indent(&mut self, string: &'static str, repeat: usize) {
+		match self.kind {
+			Root { ref mut indent } => *indent = BmlIndent { string, repeat },
+			_ => panic!("BML indent can be set for root node only"),
+		}
+	}
 	fn root() -> Self {
-		Self { kind: BmlKind::Root, ..Self::default() }
+		Self { kind: Root { indent: BmlIndent::default() }, ..Self::default() }
 	}
 	fn elem() -> Self {
-		BmlNode { kind: BmlKind::Elem, ..Self::default() }
+		Self { kind: Elem, ..Self::default() }
 	}
 	fn attr() -> Self {
-		BmlNode { kind: BmlKind::Attr, ..Self::default() }
+		Self { kind: Attr { quote: true }, ..Self::default() }
 	}
 	fn append(&mut self, (name, node): (String, BmlNode)) {
 		self.node.push((name, node));
+	}
+	fn serialize(&self, f: &mut fmt::Formatter,
+		name: &str, indent: BmlIndent,
+	) -> fmt::Result {
+		match self.kind {
+			Root { indent } => {
+				let mut nodes = self.nodes().peekable();
+				while let Some((name, node)) = nodes.next() {
+					node.serialize(f, name, indent)?;
+					if nodes.peek().is_some() {
+						writeln!(f)?;
+					}
+				}
+			},
+			Elem => {
+				write!(f, "{}{}", indent, name)?;
+				let indent = indent.next();
+				let mut attrs = 0;
+				for (name, attr) in self.nodes().take_while(|(_name, node)|
+					if let Attr { .. } = node.kind
+						{ true} else { false }
+				) {
+					attrs += 1;
+					attr.serialize(f, name, indent)?;
+				}
+				let mut lines = self.lines();
+				let line0 = lines.next();
+				let line1 = lines.next();
+				if attrs == 0 && line0.is_some() && line1.is_none() {
+					writeln!(f, ": {}", line0.unwrap())?;
+				} else {
+					writeln!(f)?;
+					for line in self.lines() {
+						writeln!(f, "{}:{}", indent, line)?;
+					}
+				}
+				for (name, elem) in self.nodes().skip(attrs) {
+					elem.serialize(f, name, indent)?;
+				}
+			},
+			Attr { quote } => {
+				write!(f, " {}", name)?;
+				if let Some(line) = self.lines().next() {
+					if quote {
+						write!(f, "=\"{}\"", line)?;
+					} else {
+						write!(f, "={}", line)?;
+					}
+				}
+			},
+		}
+		Ok(())
 	}
 }
 
@@ -137,9 +198,11 @@ impl FromStr for BmlNode {
 						for pair in pair.into_inner() {
 							match pair.as_rule() {
 								Rule::name => name = pair.as_str().into(),
-								Rule::data => {
-									attr.data += pair.into_inner().as_str();
-									attr.data += "\n"
+								Rule::data => for data in pair.into_inner() {
+									if data.as_rule() == Rule::space_data_inner
+										{ attr.kind = Attr { quote: false } };
+									attr.data += data.as_str();
+									attr.data += "\n";
 								},
 								_ => unreachable!(),
 							}
@@ -164,16 +227,58 @@ impl FromStr for BmlNode {
 	}
 }
 
+impl fmt::Display for BmlNode {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		self.serialize(f, "", BmlIndent::default())
+	}
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+struct BmlIndent {
+	string: &'static str,
+	repeat: usize,
+}
+
+impl BmlIndent {
+	fn next(mut self) -> Self {
+		self.repeat += 1;
+		self
+	}
+}
+
+impl Default for BmlIndent {
+	fn default() -> Self {
+		Self { string: "  ".into(), repeat: 0 }
+	}
+}
+
+impl fmt::Display for BmlIndent {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "{}", self.string.repeat(self.repeat))
+	}
+}
+
+#[derive(Debug, Eq, Clone, Copy)]
 enum BmlKind {
-	Root,
+	Root { indent: BmlIndent },
 	Elem,
-	Attr,
+	Attr { quote: bool },
+}
+
+impl PartialEq for BmlKind {
+	fn eq(&self, other: &BmlKind) -> bool {
+		match (self, other) {
+			(Root { .. }, Root { .. }) => true,
+			(Elem, Elem) => true,
+			(Attr { .. }, Attr { .. }) => true,
+			_ => false,
+		}
+	}
 }
 
 impl Default for BmlKind {
 	fn default() -> Self {
-		BmlKind::Root
+		Root { indent: BmlIndent::default() }
 	}
 }
 
