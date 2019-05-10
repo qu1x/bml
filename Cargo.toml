@@ -36,3 +36,4 @@ travis-ci = { repository = "qu1x/bml" }
 [dependencies]
 pest = "2"
 pest_derive = "2"
+smallstr = "0.1"

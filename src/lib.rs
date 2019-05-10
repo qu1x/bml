@@ -65,10 +65,11 @@
 
 pub use pest::Parser;
 pub use std::str::FromStr;
-use std::fmt;
 
 use pest::error::Error;
 use pest::iterators::Pair;
+use smallstr::SmallString;
+use std::fmt;
 
 use BmlKind::*;
 
@@ -79,8 +80,8 @@ use BmlKind::*;
 #[derive(Debug, Eq, Clone, Default)]
 pub struct BmlNode {
 	kind: BmlKind,
-	data: String,
-	node: Vec<(String, BmlNode)>,
+	data: BmlData,
+	node: Vec<(BmlName, BmlNode)>,
 }
 
 impl BmlNode {
@@ -95,7 +96,7 @@ impl BmlNode {
 	/// Iterator over child nodes of `name`.
 	pub fn named(&self, name: &str) -> impl Iterator<Item = &BmlNode> {
 		// TODO Use ordered multi map.
-		let name = name.to_string();
+		let name = BmlName::from(name);
 		self.node.iter().filter_map(move |(k, v)|
 			if k == &name { Some(v) } else { None })
 	}
@@ -114,7 +115,7 @@ impl BmlNode {
 	fn attr() -> Self {
 		Self { kind: Attr { quote: true }, ..Self::default() }
 	}
-	fn append(&mut self, (name, node): (String, BmlNode)) {
+	fn append(&mut self, (name, node): (BmlName, BmlNode)) {
 		self.node.push((name, node));
 	}
 	fn serialize(&self, f: &mut fmt::Formatter,
@@ -181,18 +182,18 @@ impl FromStr for BmlNode {
 	type Err = BmlError;
 
 	fn from_str(bml: &str) -> Result<Self, Self::Err> {
-		fn parse_node(pair: Pair<Rule>) -> (String, BmlNode) {
-			let mut name = String::new();
+		fn parse_node(pair: Pair<Rule>) -> (BmlName, BmlNode) {
+			let mut name = BmlName::new();
 			let mut node = BmlNode::elem();
 			for pair in pair.into_inner() {
 				match pair.as_rule() {
 					Rule::name => name = pair.as_str().into(),
 					Rule::data => {
-						node.data += pair.into_inner().as_str();
-						node.data += "\n";
+						node.data.push_str(pair.into_inner().as_str());
+						node.data.push('\n');
 					},
 					Rule::attr => {
-						let mut name = String::new();
+						let mut name = BmlName::new();
 						let mut attr = BmlNode::attr();
 						for pair in pair.into_inner() {
 							match pair.as_rule() {
@@ -200,8 +201,8 @@ impl FromStr for BmlNode {
 								Rule::data => for data in pair.into_inner() {
 									if data.as_rule() == Rule::space_data_inner
 										{ attr.kind = Attr { quote: false } };
-									attr.data += data.as_str();
-									attr.data += "\n";
+									attr.data.push_str(data.as_str());
+									attr.data.push('\n');
 								},
 								_ => unreachable!(),
 							}
@@ -232,30 +233,8 @@ impl fmt::Display for BmlNode {
 	}
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-struct BmlIndent {
-	string: &'static str,
-	repeat: usize,
-}
-
-impl BmlIndent {
-	fn next(mut self) -> Self {
-		self.repeat += 1;
-		self
-	}
-}
-
-impl Default for BmlIndent {
-	fn default() -> Self {
-		Self { string: "  ".into(), repeat: 0 }
-	}
-}
-
-impl fmt::Display for BmlIndent {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{}", self.string.repeat(self.repeat))
-	}
-}
+type BmlName = SmallString<[u8; 32]>;
+type BmlData = SmallString<[u8; 32]>;
 
 #[derive(Debug, Eq, Clone, Copy)]
 enum BmlKind {
@@ -278,6 +257,31 @@ impl PartialEq for BmlKind {
 impl Default for BmlKind {
 	fn default() -> Self {
 		Root { indent: BmlIndent::default() }
+	}
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+struct BmlIndent {
+	string: &'static str,
+	repeat: usize,
+}
+
+impl BmlIndent {
+	fn next(mut self) -> Self {
+		self.repeat += 1;
+		self
+	}
+}
+
+impl Default for BmlIndent {
+	fn default() -> Self {
+		Self { string: "  ".into(), repeat: 0 }
+	}
+}
+
+impl fmt::Display for BmlIndent {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "{}", self.string.repeat(self.repeat))
 	}
 }
 
