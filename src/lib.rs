@@ -81,10 +81,17 @@ use BmlKind::*;
 pub struct BmlNode {
 	kind: BmlKind,
 	data: BmlData,
+	#[cfg(not(feature = "nightly"))]
 	node: Vec<(BmlName, BmlNode)>,
+	#[cfg(feature = "nightly")]
+	node: ordered_multimap::ListOrderedMultimap<BmlName, BmlNode>,
 }
 
 impl BmlNode {
+	/// Value comprising data lines.
+	pub fn value(&self) -> &str {
+		&self.data
+	}
 	/// Iterator over data lines.
 	pub fn lines(&self) -> impl Iterator<Item = &str> {
 		self.data.lines()
@@ -94,12 +101,27 @@ impl BmlNode {
 		self.node.iter().map(|(name, node)| (name.as_str(), node))
 	}
 	/// Iterator over child nodes of `name`.
+	///
+	/// Complexity: O(nodes().len())
+	#[cfg(not(feature = "nightly"))]
 	pub fn named(&self, name: &str) -> impl Iterator<Item = &BmlNode> {
-		// TODO Use ordered multi map.
 		let name = BmlName::from(name);
-		self.node.iter().filter_map(move |(k, v)|
-			if k == &name { Some(v) } else { None })
+		self.node.iter().filter_map(move |(key, value)|
+			if key == &name { Some(value) } else { None })
 	}
+	/// Iterator over child nodes of `name`.
+	///
+	/// *FIXME*: This is currently broken, see `cargo test --features nightly`.
+	///
+	/// Complexity: O(named(`name`).len())
+	#[cfg(feature = "nightly")]
+	pub fn named(&self, name: &str) -> impl Iterator<Item = &BmlNode> {
+		self.node.get_all(name)
+	}
+	/// Indent `string` of child nodes and level as `repeat` times `string`.
+	///
+	/// Default is two spaces as in `"  "` and no root indent (`0`).
+	/// Usual alternative is a tabulator as in `"\t"` and no root indent (`0`).
 	pub fn set_indent(&mut self, string: &'static str, repeat: usize) {
 		match self.kind {
 			Root { ref mut indent } => *indent = BmlIndent { string, repeat },
@@ -116,7 +138,10 @@ impl BmlNode {
 		Self { kind: Attr { quote: true }, ..Self::default() }
 	}
 	fn append(&mut self, (name, node): (BmlName, BmlNode)) {
+		#[cfg(not(feature = "nightly"))]
 		self.node.push((name, node));
+		#[cfg(feature = "nightly")]
+		self.node.append(name, node);
 	}
 	fn serialize(&self, f: &mut fmt::Formatter,
 		name: &str, indent: BmlIndent,

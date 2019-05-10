@@ -37,3 +37,7 @@ travis-ci = { repository = "qu1x/bml" }
 pest = "2"
 pest_derive = "2"
 smallstr = "0.1"
+ordered-multimap = { version = "0.2", optional = true }
+
+[features]
+nightly = ["ordered-multimap"]
