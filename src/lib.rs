@@ -64,8 +64,7 @@
 //! let (name, node) = root.nodes().next().unwrap();
 //!
 //! assert_eq!(name, "server");
-//! assert_eq!(node.named("port").next().unwrap()
-//! 	.lines().next().unwrap(), "80");
+//! assert_eq!(node.named("port").next().unwrap().value(), "80");
 //! ```
 
 #[macro_use] extern crate pest_derive;
@@ -97,9 +96,9 @@ pub struct BmlNode {
 }
 
 impl BmlNode {
-	/// Value comprising data lines.
+	/// Value comprising data lines with `'\n'` removed from last line.
 	pub fn value(&self) -> &str {
-		&self.data
+		&self.data[..self.data.len() - 1]
 	}
 	/// Iterator over data lines.
 	pub fn lines(&self) -> impl Iterator<Item = &str> {
