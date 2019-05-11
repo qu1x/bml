@@ -29,6 +29,13 @@
 //! bml = "0.1"
 //! ```
 //!
+//! Use **experimental** `ordered-multimap` feature on Rust nightly channel:
+//!
+//! ```toml
+//! [dependencies]
+//! bml = { version = "0.1", features = ["ordered-multimap"] }
+//! ```
+//!
 //! # Examples
 //!
 //! ```
