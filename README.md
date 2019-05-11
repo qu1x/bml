@@ -52,7 +52,9 @@ bml = { version = "0.1", features = ["ordered-multimap"] }
 ## Examples
 
 ```rust
-use bml::{BmlNode, FromStr};
+use std::str::FromStr;
+
+use bml::BmlNode;
 
 let root = BmlNode::from_str(concat!(
 	"server\n",
@@ -77,8 +79,7 @@ let root = BmlNode::from_str(concat!(
 let (name, node) = root.nodes().next().unwrap();
 
 assert_eq!(name, "server");
-assert_eq!(node.named("port").next().unwrap()
-	.lines().next().unwrap(), "80");
+assert_eq!(node.named("port").next().unwrap().value(), "80");
 ```
 
 ## License

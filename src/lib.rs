@@ -39,7 +39,9 @@
 //! # Examples
 //!
 //! ```
-//! use bml::{BmlNode, FromStr};
+//! use std::str::FromStr;
+//!
+//! use bml::BmlNode;
 //!
 //! let root = BmlNode::from_str(concat!(
 //! 	"server\n",
@@ -67,19 +69,92 @@
 //! assert_eq!(node.named("port").next().unwrap().value(), "80");
 //! ```
 
-#[macro_use] extern crate pest_derive;
+#![deny(missing_docs)]
 
-pub use pest::Parser;
-pub use std::str::FromStr;
+#[macro_use]
+extern crate err_derive;
 
+#[macro_use]
+extern crate pest_derive;
+
+use pest::Parser;
 use pest::error::Error;
 use pest::iterators::Pair;
+
+pub(crate) mod parser {
+	#[derive(Parser)]
+	#[grammar = "bml.pest"]
+	pub struct BmlParser;
+}
+
+use parser::{BmlParser, Rule};
+
+/// BML parser error.
+#[derive(Debug, PartialEq, Eq, Clone, Error)]
+#[error(display = "Invalid BML\n{}", inner)]
+pub struct BmlError {
+	inner: Error<Rule>,
+}
+
 #[cfg(feature = "ordered-multimap")]
 use ordered_multimap::ListOrderedMultimap;
 use smallstr::SmallString;
+use std::str::FromStr;
 use std::fmt;
 
+type BmlName = SmallString<[u8; 32]>;
+type BmlData = SmallString<[u8; 32]>;
+
+#[derive(Debug, Eq, Clone, Copy)]
+enum BmlKind {
+	Root { indent: BmlIndent },
+	Elem,
+	Attr { quote: bool },
+}
+
 use BmlKind::*;
+
+impl PartialEq for BmlKind {
+	fn eq(&self, other: &BmlKind) -> bool {
+		match (self, other) {
+			(Root { .. }, Root { .. }) => true,
+			(Elem, Elem) => true,
+			(Attr { .. }, Attr { .. }) => true,
+			_ => false,
+		}
+	}
+}
+
+impl Default for BmlKind {
+	fn default() -> Self {
+		Root { indent: BmlIndent::default() }
+	}
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+struct BmlIndent {
+	string: &'static str,
+	repeat: usize,
+}
+
+impl BmlIndent {
+	fn next(mut self) -> Self {
+		self.repeat += 1;
+		self
+	}
+}
+
+impl Default for BmlIndent {
+	fn default() -> Self {
+		Self { string: "  ".into(), repeat: 0 }
+	}
+}
+
+impl fmt::Display for BmlIndent {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "{}", self.string.repeat(self.repeat))
+	}
+}
 
 /// BML node comprising data `lines()` and child `nodes()`.
 ///
@@ -256,8 +331,11 @@ impl FromStr for BmlNode {
 			}
 			(name, node)
 		}
+
 		let mut root = BmlNode::root();
-		for pair in BmlParser::parse(Rule::root, &bml)? {
+		for pair in BmlParser::parse(Rule::root, &bml)
+			.map_err(|inner| BmlError { inner })?
+		{
 			match pair.as_rule() {
 				Rule::node => root.append(parse_node(pair)),
 				Rule::EOI => (),
@@ -273,63 +351,3 @@ impl fmt::Display for BmlNode {
 		self.serialize(f, "", BmlIndent::default())
 	}
 }
-
-type BmlName = SmallString<[u8; 32]>;
-type BmlData = SmallString<[u8; 32]>;
-
-#[derive(Debug, Eq, Clone, Copy)]
-enum BmlKind {
-	Root { indent: BmlIndent },
-	Elem,
-	Attr { quote: bool },
-}
-
-impl PartialEq for BmlKind {
-	fn eq(&self, other: &BmlKind) -> bool {
-		match (self, other) {
-			(Root { .. }, Root { .. }) => true,
-			(Elem, Elem) => true,
-			(Attr { .. }, Attr { .. }) => true,
-			_ => false,
-		}
-	}
-}
-
-impl Default for BmlKind {
-	fn default() -> Self {
-		Root { indent: BmlIndent::default() }
-	}
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-struct BmlIndent {
-	string: &'static str,
-	repeat: usize,
-}
-
-impl BmlIndent {
-	fn next(mut self) -> Self {
-		self.repeat += 1;
-		self
-	}
-}
-
-impl Default for BmlIndent {
-	fn default() -> Self {
-		Self { string: "  ".into(), repeat: 0 }
-	}
-}
-
-impl fmt::Display for BmlIndent {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{}", self.string.repeat(self.repeat))
-	}
-}
-
-/// BML parser.
-#[derive(Parser)]
-#[grammar = "bml.pest"]
-pub struct BmlParser;
-
-/// BML parser errors.
-pub type BmlError = Error<Rule>;
