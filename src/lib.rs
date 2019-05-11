@@ -68,6 +68,8 @@ pub use std::str::FromStr;
 
 use pest::error::Error;
 use pest::iterators::Pair;
+#[cfg(feature = "ordered-multimap")]
+use ordered_multimap::ListOrderedMultimap;
 use smallstr::SmallString;
 use std::fmt;
 
@@ -81,10 +83,10 @@ use BmlKind::*;
 pub struct BmlNode {
 	kind: BmlKind,
 	data: BmlData,
-	#[cfg(not(feature = "nightly"))]
+	#[cfg(feature = "ordered-multimap")]
+	node: ListOrderedMultimap<BmlName, BmlNode>,
+	#[cfg(not(feature = "ordered-multimap"))]
 	node: Vec<(BmlName, BmlNode)>,
-	#[cfg(feature = "nightly")]
-	node: ordered_multimap::ListOrderedMultimap<BmlName, BmlNode>,
 }
 
 impl BmlNode {
@@ -102,21 +104,26 @@ impl BmlNode {
 	}
 	/// Iterator over child nodes of `name`.
 	///
-	/// Complexity: O(nodes().len())
-	#[cfg(not(feature = "nightly"))]
+	/// **NOTE**: Verify with `cargo test --features ordered-multimap`.
+	///
+	/// Complexity: *O(m)* where *m* is the number of nodes matching `name`.
+	#[cfg(feature = "ordered-multimap")]
+	pub fn named(&self, name: &str) -> impl Iterator<Item = &BmlNode> {
+		self.node.get_all(name)
+	}
+	/// Iterator over child nodes of `name`.
+	///
+	/// **NOTE**: Fallback implementation for stable Rust using `Vec` instead
+	/// of `ordered_multimap::ListOrderedMultimap`. On nightly Rust enable the
+	/// `ordered-multimap` feature to reduce the complexity to *O(m)* where *m*
+	/// is the number of nodes matching `name`.
+	///
+	/// Complexity: *O(n)* where *n* is the total number of child nodes.
+	#[cfg(not(feature = "ordered-multimap"))]
 	pub fn named(&self, name: &str) -> impl Iterator<Item = &BmlNode> {
 		let name = BmlName::from(name);
 		self.node.iter().filter_map(move |(key, value)|
 			if key == &name { Some(value) } else { None })
-	}
-	/// Iterator over child nodes of `name`.
-	///
-	/// *FIXME*: This is currently broken, see `cargo test --features nightly`.
-	///
-	/// Complexity: O(named(`name`).len())
-	#[cfg(feature = "nightly")]
-	pub fn named(&self, name: &str) -> impl Iterator<Item = &BmlNode> {
-		self.node.get_all(name)
 	}
 	/// Indent `string` of child nodes and level as `repeat` times `string`.
 	///
@@ -138,10 +145,10 @@ impl BmlNode {
 		Self { kind: Attr { quote: true }, ..Self::default() }
 	}
 	fn append(&mut self, (name, node): (BmlName, BmlNode)) {
-		#[cfg(not(feature = "nightly"))]
-		self.node.push((name, node));
-		#[cfg(feature = "nightly")]
+		#[cfg(feature = "ordered-multimap")]
 		self.node.append(name, node);
+		#[cfg(not(feature = "ordered-multimap"))]
+		self.node.push((name, node));
 	}
 	fn serialize(&self, f: &mut fmt::Formatter,
 		name: &str, indent: BmlIndent,
