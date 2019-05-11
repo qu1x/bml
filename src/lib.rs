@@ -105,7 +105,7 @@ impl BmlNode {
 		self.data.lines()
 	}
 	/// Iterator over child nodes as `(name, node)` tuples.
-	pub fn nodes(&self) -> impl Iterator<Item = (&str, &BmlNode)> {
+	pub fn nodes(&self) -> impl ExactSizeIterator<Item = (&str, &BmlNode)> {
 		self.node.iter().map(|(name, node)| (name.as_str(), node))
 	}
 	/// Iterator over child nodes of `name`.
@@ -114,7 +114,7 @@ impl BmlNode {
 	///
 	/// Complexity: *O(m)* where *m* is the number of nodes matching `name`.
 	#[cfg(feature = "ordered-multimap")]
-	pub fn named(&self, name: &str) -> impl Iterator<Item = &BmlNode> {
+	pub fn named(&self, name: &str) -> impl ExactSizeIterator<Item = &BmlNode> {
 		self.node.get_all(name)
 	}
 	/// Iterator over child nodes of `name`.
