@@ -5,9 +5,9 @@ matrix:
     - rust: stable
     - rust: beta
     - rust: nightly
+  allow_failures:
     - rust: nightly
       env: FEATURES="ordered-multimap"
-      allow_failure: true
 script:
   - cargo build --verbose --features "$FEATURES"
   - cargo test --verbose --features "$FEATURES"
