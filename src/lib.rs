@@ -101,11 +101,12 @@ impl BmlNode {
 		&self.data[..self.data.len() - 1]
 	}
 	/// Iterator over data lines.
-	pub fn lines(&self) -> impl Iterator<Item = &str> {
+	pub fn lines(&self) -> impl DoubleEndedIterator<Item = &str> {
 		self.data.lines()
 	}
 	/// Iterator over child nodes as `(name, node)` tuples.
-	pub fn nodes(&self) -> impl ExactSizeIterator<Item = (&str, &BmlNode)> {
+	pub fn nodes(&self)
+	-> impl DoubleEndedIterator<Item = (&str, &BmlNode)> + ExactSizeIterator {
 		self.node.iter().map(|(name, node)| (name.as_str(), node))
 	}
 	/// Iterator over child nodes of `name`.
@@ -114,7 +115,8 @@ impl BmlNode {
 	///
 	/// Complexity: *O(m)* where *m* is the number of nodes matching `name`.
 	#[cfg(feature = "ordered-multimap")]
-	pub fn named(&self, name: &str) -> impl ExactSizeIterator<Item = &BmlNode> {
+	pub fn named(&self, name: &str)
+	-> impl DoubleEndedIterator<Item = &BmlNode> + ExactSizeIterator {
 		self.node.get_all(name)
 	}
 	/// Iterator over child nodes of `name`.
@@ -126,7 +128,8 @@ impl BmlNode {
 	///
 	/// Complexity: *O(n)* where *n* is the total number of child nodes.
 	#[cfg(not(feature = "ordered-multimap"))]
-	pub fn named(&self, name: &str) -> impl Iterator<Item = &BmlNode> {
+	pub fn named(&self, name: &str)
+	-> impl DoubleEndedIterator<Item = &BmlNode> {
 		let name = BmlName::from(name);
 		self.node.iter().filter_map(move |(key, value)|
 			if key == &name { Some(value) } else { None })
