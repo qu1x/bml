@@ -31,6 +31,7 @@ Based on [PEG], see the interactive parser implementation at [pest.rs].
   * [License](#license)
   * [Contribution](#contribution)
 
+
 ## Usage
 
 This crate works on Rust stable channel. It is
@@ -39,24 +40,24 @@ This crate works on Rust stable channel. It is
 
 ```toml
 [dependencies]
-bml = "0.1"
+bml = "0.2"
 ```
 
-Use **experimental** `ordered-multimap` feature on Rust nightly channel:
+Use `ordered-multimap` feature on Rust nightly channel:
 
 ```toml
 [dependencies]
-bml = { version = "0.1", features = ["ordered-multimap"] }
+bml = { version = "0.2", features = ["ordered-multimap"] }
 ```
 
 ## Examples
 
 ```rust
-use std::str::FromStr;
+use std::convert::TryFrom;
 
 use bml::BmlNode;
 
-let root = BmlNode::from_str(concat!(
+let root = BmlNode::try_from(concat!(
 	"server\n",
 	"  path: /core/www/\n",
 	"  host: example.com\n",

@@ -26,24 +26,24 @@
 //!
 //! ```toml
 //! [dependencies]
-//! bml = "0.1"
+//! bml = "0.2"
 //! ```
 //!
-//! Use **experimental** `ordered-multimap` feature on Rust nightly channel:
+//! Use `ordered-multimap` feature on Rust nightly channel:
 //!
 //! ```toml
 //! [dependencies]
-//! bml = { version = "0.1", features = ["ordered-multimap"] }
+//! bml = { version = "0.2", features = ["ordered-multimap"] }
 //! ```
 //!
 //! # Examples
 //!
 //! ```
-//! use std::str::FromStr;
+//! use std::convert::TryFrom;
 //!
 //! use bml::BmlNode;
 //!
-//! let root = BmlNode::from_str(concat!(
+//! let root = BmlNode::try_from(concat!(
 //! 	"server\n",
 //! 	"  path: /core/www/\n",
 //! 	"  host: example.com\n",
@@ -99,7 +99,7 @@ pub struct BmlError {
 #[cfg(feature = "ordered-multimap")]
 use ordered_multimap::ListOrderedMultimap;
 use smallstr::SmallString;
-use std::str::FromStr;
+use std::convert::TryFrom;
 use std::fmt;
 
 type BmlName = SmallString<[u8; 32]>;
@@ -294,10 +294,10 @@ impl PartialEq for BmlNode {
 	}
 }
 
-impl FromStr for BmlNode {
-	type Err = BmlError;
+impl TryFrom<&str> for BmlNode {
+	type Error = BmlError;
 
-	fn from_str(bml: &str) -> Result<Self, Self::Err> {
+	fn try_from(bml: &str) -> Result<Self, Self::Error> {
 		fn parse_node(pair: Pair<Rule>) -> (BmlName, BmlNode) {
 			let mut name = BmlName::new();
 			let mut node = BmlNode::elem();
