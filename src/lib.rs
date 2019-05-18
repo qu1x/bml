@@ -351,3 +351,16 @@ impl fmt::Display for BmlNode {
 		self.serialize(f, "", BmlIndent::default())
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::{BmlNode, TryFrom};
+
+	#[test]
+	fn ordered_iteration() {
+		let root = BmlNode::try_from("0:a\n1:b\n2:c\n1:d\n3:e\n").unwrap();
+		assert_eq!(root.nodes().map(|(name, node)| (name, node.value()))
+			.collect::<Vec<_>>(),
+			vec![("0", "a"), ("1", "b"), ("2", "c"), ("1", "d"), ("3", "e")]);
+	}
+}
