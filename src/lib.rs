@@ -188,7 +188,7 @@ impl BmlNode {
 	///
 	/// **NOTE**: Verify with `cargo test --features ordered-multimap`.
 	///
-	/// Complexity: *O(m)* where *m* is the number of nodes matching `name`.
+	/// Complexity: *O(1)*
 	#[cfg(feature = "ordered-multimap")]
 	pub fn named(&self, name: &str)
 	-> impl DoubleEndedIterator<Item = &BmlNode> + ExactSizeIterator {
@@ -198,8 +198,7 @@ impl BmlNode {
 	///
 	/// **NOTE**: Fallback implementation for stable Rust using `Vec` instead
 	/// of `ordered_multimap::ListOrderedMultimap`. On nightly Rust enable the
-	/// `ordered-multimap` feature to reduce the complexity to *O(m)* where *m*
-	/// is the number of nodes matching `name`.
+	/// `ordered-multimap` feature to reduce the complexity to *O(1)*.
 	///
 	/// Complexity: *O(n)* where *n* is the total number of child nodes.
 	#[cfg(not(feature = "ordered-multimap"))]
