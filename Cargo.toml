@@ -34,7 +34,7 @@ include = [
 travis-ci = { repository = "qu1x/bml" }
 
 [dependencies]
-err-derive = "0.1"
+err-derive = "0.2"
 pest = "2"
 pest_derive = "2"
 smallstr = "0.1"
