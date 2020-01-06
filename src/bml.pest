@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Rouven Spreckels <n3vu0r@qu1x.org>
+// Copyright (c) 2019, 2020 Rouven Spreckels <n3vu0r@qu1x.org>
 //
 // Usage of the works is permitted provided that
 // this instrument is retained with the works, so that
@@ -8,16 +8,16 @@
 
 // Language:   BML v1.0
 // Revision:   0.04
+// Features:   stack-based-indent, tabular-attributes, tabular-colon-data
 // Maintainer: Rouven Spreckels <n3vu0r@qu1x.org>
 // URL:        https://qu1x.org/bml
 // LICENSE:    Fair
 
-root = _{ SOI ~ (node | indent* ~ (comment | NEWLINE))* ~ EOI }
+root = _{ SOI ~ (node | tail)* ~ EOI }
 
-node = { PUSH(indent*) ~ name ~ data? ~ attr* ~ " "* ~ (comment | NEWLINE)
-  ~ (elem | indent* ~ (comment | NEWLINE))* ~ DROP }
+node = { PUSH(indent*) ~ name ~ data? ~ attr* ~ tail ~ (elem | tail)* ~ DROP }
 elem = _{ PEEK_ALL ~ PUSH(indent+) ~ (node | (&":" ~ data ~ NEWLINE)) ~ DROP }
-attr = { " "+ ~ name ~ data? }
+attr = { indent+ ~ name ~ data? }
 
 name = { (ASCII_ALPHANUMERIC | '-'..'.')+ }
 data = { quote_data | space_data | colon_data }
@@ -25,13 +25,15 @@ data = { quote_data | space_data | colon_data }
 quote_data = _{ "=\"" ~ quote_data_inner ~ "\"" }
 quote_data_inner = { (!("\"" | NEWLINE) ~ ANY)* }
 
-space_data = _{ "=" ~ space_data_inner ~ &(" " | NEWLINE) }
-space_data_inner = { (!("\"" | " " | NEWLINE) ~ ANY)* }
+space_data = _{ "=" ~ space_data_inner ~ &(indent | NEWLINE) }
+space_data_inner = { (!("\"" | indent | NEWLINE) ~ ANY)* }
 
-colon_data = _{ ":" ~ " "? ~ colon_data_inner ~ &NEWLINE }
+colon_data = _{ ":" ~ indent? ~ colon_data_inner ~ &NEWLINE }
 colon_data_inner = { (!NEWLINE ~ ANY)* }
 
-comment = _{ "//" ~ " "? ~ comment_inner ~ NEWLINE }
+tail = _{ indent* ~ (comment | NEWLINE) }
+
+comment = _{ "//" ~ indent? ~ comment_inner ~ NEWLINE }
 comment_inner = _{ (!NEWLINE ~ ANY)* }
 
 indent = _{ " " | "\t" }
