@@ -15,8 +15,11 @@
 
 root = _{ SOI ~ (node | tail)* ~ EOI }
 
-node = { PUSH(indent*) ~ name ~ data? ~ attr* ~ tail ~ (elem | tail)* ~ DROP }
-elem = _{ PEEK_ALL ~ PUSH(indent+) ~ (node | (&":" ~ data ~ NEWLINE)) ~ DROP }
+node = { PUSH(indent*) ~ name ~ data? ~ attr* ~ tail
+  ~ (line | tail)*
+  ~ (elem | tail)* ~ DROP }
+line = _{ PEEK_ALL ~ PUSH(indent+) ~ (&":" ~ data ~ NEWLINE) ~ DROP }
+elem = _{ PEEK_ALL ~ PUSH(indent+) ~ node ~ DROP }
 attr = { indent+ ~ name ~ data? }
 
 name = { (ASCII_ALPHANUMERIC | '-'..'.')+ }
