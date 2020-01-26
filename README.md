@@ -43,13 +43,6 @@ This crate works on Rust stable channel. It is
 bml = "0.2"
 ```
 
-Use `ordered-multimap` feature on Rust nightly channel:
-
-```toml
-[dependencies]
-bml = { version = "0.2", features = ["ordered-multimap"] }
-```
-
 ## Examples
 
 ```rust
