@@ -38,4 +38,4 @@ err-derive = "0.2"
 pest = "2"
 pest_derive = "2"
 smallstr = "0.1"
-ordered-multimap = { version = "0.2", optional = true }
+ordered-multimap = "0.2"

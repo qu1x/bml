@@ -29,13 +29,6 @@
 //! bml = "0.2"
 //! ```
 //!
-//! Use `ordered-multimap` feature on Rust nightly channel:
-//!
-//! ```toml
-//! [dependencies]
-//! bml = { version = "0.2", features = ["ordered-multimap"] }
-//! ```
-//!
 //! # Examples
 //!
 //! ```
@@ -96,7 +89,6 @@ pub struct BmlError {
 	inner: Error<Rule>,
 }
 
-#[cfg(feature = "ordered-multimap")]
 use ordered_multimap::ListOrderedMultimap;
 use smallstr::SmallString;
 use std::convert::TryFrom;
@@ -164,10 +156,7 @@ impl fmt::Display for BmlIndent {
 pub struct BmlNode {
 	kind: BmlKind,
 	data: BmlData,
-	#[cfg(feature = "ordered-multimap")]
 	node: ListOrderedMultimap<BmlName, BmlNode>,
-	#[cfg(not(feature = "ordered-multimap"))]
-	node: Vec<(BmlName, BmlNode)>,
 }
 
 impl BmlNode {
@@ -186,27 +175,10 @@ impl BmlNode {
 	}
 	/// Iterator over child nodes of `name`.
 	///
-	/// **NOTE**: Verify with `cargo test --features ordered-multimap`.
-	///
 	/// Complexity: *O(1)*
-	#[cfg(feature = "ordered-multimap")]
 	pub fn named(&self, name: &str)
 	-> impl DoubleEndedIterator<Item = &BmlNode> + ExactSizeIterator {
 		self.node.get_all(name)
-	}
-	/// Iterator over child nodes of `name`.
-	///
-	/// **NOTE**: Fallback implementation for stable Rust using `Vec` instead
-	/// of `ordered_multimap::ListOrderedMultimap`. On nightly Rust enable the
-	/// `ordered-multimap` feature to reduce the complexity to *O(1)*.
-	///
-	/// Complexity: *O(n)* where *n* is the total number of child nodes.
-	#[cfg(not(feature = "ordered-multimap"))]
-	pub fn named(&self, name: &str)
-	-> impl DoubleEndedIterator<Item = &BmlNode> {
-		let name = BmlName::from(name);
-		self.node.iter().filter_map(move |(key, value)|
-			if key == &name { Some(value) } else { None })
 	}
 	/// Indent `string` of child nodes and level as `repeat` times `string`.
 	///
@@ -228,10 +200,7 @@ impl BmlNode {
 		Self { kind: Attr { quote: true }, ..Self::default() }
 	}
 	fn append(&mut self, (name, node): (BmlName, BmlNode)) {
-		#[cfg(feature = "ordered-multimap")]
 		self.node.append(name, node);
-		#[cfg(not(feature = "ordered-multimap"))]
-		self.node.push((name, node));
 	}
 	fn serialize(&self, f: &mut fmt::Formatter,
 		name: &str, indent: BmlIndent,
