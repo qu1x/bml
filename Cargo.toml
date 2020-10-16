@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = [
 	"bml",
 	"markup-language",
-	"snes-preservation-project",
+	"snes-preservation",
 	"higan-manifest",
 	"bsnes-manifest",
 ]
