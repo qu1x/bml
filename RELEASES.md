@@ -1,3 +1,8 @@
+# Version 0.3.0 (2020-10-16)
+
+  * Update dependencies.
+  * License under `ISC`.
+
 # Version 0.2.0 (2019-05-13)
 
   * Hide parser implementation.

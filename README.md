@@ -1,12 +1,8 @@
-# bml
-
-**BML Markup Language**
-
 [![Build Status][]](https://travis-ci.org/qu1x/bml)
 [![Downloads][]](https://crates.io/crates/bml)
 [![Version][]](https://crates.io/crates/bml)
 [![Documentation][]](https://docs.rs/bml)
-[![License][]](https://opensource.org/licenses/Fair)
+[![License][]](https://opensource.org/licenses/ISC)
 
 [Build Status]: https://travis-ci.org/qu1x/bml.svg
 [Downloads]: https://img.shields.io/crates/d/bml.svg
@@ -14,41 +10,43 @@
 [Documentation]: https://docs.rs/bml/badge.svg
 [License]: https://img.shields.io/crates/l/bml.svg
 
-Based on [PEG], see the interactive parser implementation at [pest.rs].
+# bml
 
-[BML] is used by the icarus database of [higan]/[bsnes].
+BML Markup Language
+
+[BML] is a simplified [XML] used by the [SNES Preservation Project], see the BML [grammar] using
+[PEG] as input for the [pest] parser.
+
+In contrast to its C++ [reference] implementation, this Rust implementation parses indents by
+pushing them on a stack to compare them instead of counting characters (stack-based-indent) and
+it allows tabulators between attributes (tabular-attributes) and between colons and multi-line
+data (tabular-colon-data) supporting tabulator-based along with space-based alignments.
+
+Syntax highlighting is trivial, see [vim-bml].
 
 [BML]: https://news.ycombinator.com/item?id=8645591
+[XML]: https://en.wikipedia.org/wiki/XML
+[SNES Preservation Project]: https://byuu.org/preservation/
+[grammar]: https://github.com/qu1x/bml/blob/master/src/bml.pest
 [PEG]: https://en.wikipedia.org/wiki/Parsing_expression_grammar
-[pest.rs]: https://pest.rs/?bin=ov6wy#editor
-[higan]: https://byuu.org/emulation/higan/
-[bsnes]: https://byuu.org/emulation/bsnes/
-
-## Contents
-
-  * [Usage](#usage)
-  * [Examples](#examples)
-  * [License](#license)
-  * [Contribution](#contribution)
-
+[pest]: https://pest.rs/
+[reference]: https://github.com/higan-emu/higan/blob/master/nall/string/markup/bml.hpp
+[vim-bml]: https://github.com/qu1x/vim-bml
 
 ## Usage
 
-This crate works on Rust stable channel. It is
-[on crates.io](https://crates.io/crates/bml) and can be used by adding
-`bml` to the dependencies in your project's `Cargo.toml`:
+This crate works on Rust stable channel by adding it to `Cargo.toml`:
 
 ```toml
 [dependencies]
-bml = "0.2"
+bml = "0.3"
 ```
 
 ## Examples
 
 ```rust
-use std::convert::TryFrom;
-
 use bml::BmlNode;
+use std::convert::TryFrom;
 
 let root = BmlNode::try_from(concat!(
 	"server\n",
@@ -78,16 +76,9 @@ assert_eq!(node.named("port").next().unwrap().value(), "80");
 
 ## License
 
-Copyright (c) 2019 Rouven Spreckels <n3vu0r@qu1x.org>
-
-Usage of the works is permitted provided that
-this instrument is retained with the works, so that
-any entity that uses the works is notified of this instrument.
-
-DISCLAIMER: THE WORKS ARE WITHOUT WARRANTY.
+Licensed under `ISC`.
 
 ## Contribution
 
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the works by you shall be licensed as above, without any
-additional terms or conditions.
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the
+works by you shall be licensed as above, without any additional terms or conditions.

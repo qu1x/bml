@@ -1,17 +1,16 @@
 [package]
 name = "bml"
-version = "0.2.0"
-authors = ["Rouven Spreckels <n3vu0r@qu1x.org>"]
+version = "0.3.0"
+authors = ["Rouven Spreckels <rs@qu1x.dev>"]
 edition = "2018"
 description = "BML Markup Language"
 documentation = "https://docs.rs/bml"
-homepage = "https://qu1x.org/bml"
 repository = "https://github.com/qu1x/bml"
 readme = "README.md"
 keywords = [
 	"bml",
 	"markup-language",
-	"icarus-database",
+	"snes-preservation-project",
 	"higan-manifest",
 	"bsnes-manifest",
 ]
@@ -21,7 +20,7 @@ categories = [
 	"encoding",
 	"config",
 ]
-license = "Fair"
+license = "ISC"
 include = [
 	"src/lib.rs",
 	"src/bml.pest",
@@ -34,8 +33,8 @@ include = [
 travis-ci = { repository = "qu1x/bml" }
 
 [dependencies]
-err-derive = "0.2"
+thiserror = "1"
 pest = "2"
 pest_derive = "2"
-smallstr = "0.1"
-ordered-multimap = "0.2"
+smartstring = "0.2"
+ordered-multimap = "0.3"

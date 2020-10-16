@@ -1,17 +1,8 @@
-// Copyright (c) 2019, 2020 Rouven Spreckels <n3vu0r@qu1x.org>
-//
-// Usage of the works is permitted provided that
-// this instrument is retained with the works, so that
-// any entity that uses the works is notified of this instrument.
-//
-// DISCLAIMER: THE WORKS ARE WITHOUT WARRANTY.
-
 // Language:   BML v1.0
 // Revision:   0.04
 // Features:   stack-based-indent, tabular-attributes, tabular-colon-data
-// Maintainer: Rouven Spreckels <n3vu0r@qu1x.org>
-// Homepage:   https://qu1x.org/bml
-// License:    https://opensource.org/licenses/Fair
+// Maintainer: Rouven Spreckels <rs@qu1x.dev>
+// License:    ISC
 
 root = _{ SOI ~ (node | tail)* ~ EOI }
 
