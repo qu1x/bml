@@ -1,83 +1,78 @@
-//! BML Markup Language
-//!
-//! [BML] is a simplified [XML] used by the [SNES Preservation Project], see the BML [grammar] using
-//! [PEG] as input for the [pest] parser.
-//!
-//! In contrast to its C++ [reference] implementation, this Rust implementation parses indents by
-//! pushing them on a stack to compare them instead of counting characters (stack-based-indent) and
-//! it allows tabulators between attributes (tabular-attributes) and between colons and multi-line
-//! data (tabular-colon-data) supporting tabulator-based along with space-based alignments.
-//!
-//! Syntax highlighting is trivial, see [vim-bml].
-//!
-//! [BML]: https://news.ycombinator.com/item?id=8645591
-//! [XML]: https://en.wikipedia.org/wiki/XML
-//! [SNES Preservation Project]: https://byuu.org/preservation/
-//! [grammar]: https://github.com/qu1x/bml/blob/master/src/bml.pest
-//! [PEG]: https://en.wikipedia.org/wiki/Parsing_expression_grammar
-//! [pest]: https://pest.rs/
-//! [reference]: https://github.com/higan-emu/higan/blob/master/nall/string/markup/bml.hpp
-//! [vim-bml]: https://github.com/qu1x/vim-bml
-//!
-//! # Usage
-//!
-//! This crate works on Rust stable channel by adding it to `Cargo.toml`:
-//!
-//! ```toml
-//! [dependencies]
-//! bml = "0.3"
-//! ```
-//!
-//! # Examples
-//!
-//! ```
-//! use bml::BmlNode;
-//! use std::convert::TryFrom;
-//!
-//! let root = BmlNode::try_from(concat!(
-//! 	"server\n",
-//! 	"  path: /core/www/\n",
-//! 	"  host: example.com\n",
-//! 	"  port: 80\n",
-//! 	"  service: true\n",
-//! 	"  proxy\n",
-//! 	"    host: proxy.example.com\n",
-//! 	"    port: 8080\n",
-//! 	"    authentication: plain\n",
-//! 	"  description\n",
-//! 	"    :Primary web-facing server\n",
-//! 	"    :Provides commerce-related functionality\n",
-//! 	"\n",
-//! 	"server\n",
-//! 	"  // ...\n",
-//! 	"  proxy host=\"proxy.example.com\" port=\"8080\"\n",
-//! 	"    authentication: plain\n",
-//! )).unwrap();
-//!
-//! let (name, node) = root.nodes().next().unwrap();
-//!
-//! assert_eq!(name, "server");
-//! assert_eq!(node.named("port").next().unwrap().value(), "80");
-//! ```
+/*!
+BML Markup Language
 
-#![deny(missing_docs)]
+[BML] is a simplified [XML] used as static [database], see the [grammar] using [PEG] as input for
+the [pest] parser.
+
+In contrast to its C++ [reference] implementation, this Rust implementation parses indents by
+pushing them on a stack to compare them instead of counting characters (stack-based-indent) and it
+allows tabulators between attributes (tabular-attributes) and between colons and multi-line data
+(tabular-colon-data) supporting tabulator-based along with space-based alignments.
+
+Syntax highlighting is trivial, see [vim-bml].
+
+[BML]: https://news.ycombinator.com/item?id=8645591
+[XML]: https://en.wikipedia.org/wiki/XML
+[database]: https://github.com/ares-emulator/ares/tree/master/mia/Database
+[grammar]: https://github.com/qu1x/bml/blob/main/src/bml.pest
+[PEG]: https://en.wikipedia.org/wiki/Parsing_expression_grammar
+[pest]: https://pest.rs/
+[reference]: https://github.com/ares-emulator/ares/blob/master/nall/string/markup/bml.hpp
+[vim-bml]: https://github.com/qu1x/vim-bml
+
+# Examples
+
+```
+use bml::BmlNode;
+
+let root = BmlNode::try_from(concat!(
+	"server\n",
+	"  path: /core/www/\n",
+	"  host: example.com\n",
+	"  port: 80\n",
+	"  service: true\n",
+	"  proxy\n",
+	"    host: proxy.example.com\n",
+	"    port: 8080\n",
+	"    authentication: plain\n",
+	"  description\n",
+	"    :Primary web-facing server\n",
+	"    :Provides commerce-related functionality\n",
+	"\n",
+	"server\n",
+	"  // ...\n",
+	"  proxy host=\"proxy.example.com\" port=\"8080\"\n",
+	"    authentication: plain\n",
+)).unwrap();
+
+let (name, node) = root.nodes().next().unwrap();
+
+assert_eq!(name, "server");
+assert_eq!(node.named("port").next().unwrap().value(), "80");
+```
+*/
+
+#![forbid(unsafe_code)]
+#![forbid(missing_docs)]
+#![allow(clippy::tabs_in_doc_comments)]
+
+use core::fmt;
 
 #[macro_use]
 extern crate pest_derive;
+use ordered_multimap::ListOrderedMultimap;
+use pest::{error::Error, iterators::Pair, Parser};
+use smartstring::alias::String;
+use thiserror::Error;
 
-use pest::error::Error;
-use pest::iterators::Pair;
-use pest::Parser;
+use derive::{BmlParser, Rule};
+use BmlKind::{Attr, Elem, Root};
 
-pub(crate) mod parser {
+pub(crate) mod derive {
 	#[derive(Parser)]
 	#[grammar = "bml.pest"]
 	pub struct BmlParser;
 }
-
-use parser::{BmlParser, Rule};
-
-use thiserror::Error;
 
 /// BML parser error.
 #[derive(Debug, PartialEq, Eq, Clone, Error)]
@@ -85,11 +80,6 @@ use thiserror::Error;
 pub struct BmlError {
 	inner: Error<Rule>,
 }
-
-use ordered_multimap::ListOrderedMultimap;
-use smartstring::alias::String;
-use std::convert::TryFrom;
-use std::fmt;
 
 type BmlName = String;
 type BmlData = String;
@@ -101,20 +91,17 @@ enum BmlKind {
 	Attr { quote: bool },
 }
 
-use BmlKind::*;
-
 impl PartialEq for BmlKind {
 	fn eq(&self, other: &BmlKind) -> bool {
-		match (self, other) {
-			(Root { .. }, Root { .. }) => true,
-			(Elem, Elem) => true,
-			(Attr { .. }, Attr { .. }) => true,
-			_ => false,
-		}
+		matches!(
+			(self, other),
+			(Root { .. }, Root { .. }) | (Elem, Elem) | (Attr { .. }, Attr { .. })
+		)
 	}
 }
 
 impl Default for BmlKind {
+	#[inline]
 	fn default() -> Self {
 		Root {
 			indent: BmlIndent::default(),
@@ -129,6 +116,7 @@ struct BmlIndent {
 }
 
 impl BmlIndent {
+	#[inline]
 	fn next(mut self) -> Self {
 		self.repeat += 1;
 		self
@@ -136,9 +124,10 @@ impl BmlIndent {
 }
 
 impl Default for BmlIndent {
+	#[inline]
 	fn default() -> Self {
 		Self {
-			string: "  ".into(),
+			string: "  ",
 			repeat: 0,
 		}
 	}
@@ -150,7 +139,7 @@ impl fmt::Display for BmlIndent {
 	}
 }
 
-/// BML node comprising data `lines()` and child `nodes()`.
+/// BML node comprising data [`Self::lines()`] and child [`Self::nodes()`].
 ///
 /// By design, attributes are considered child nodes as well but carry a flag marking them as
 /// attributes for serialization purpose only.
@@ -163,20 +152,28 @@ pub struct BmlNode {
 
 impl BmlNode {
 	/// Value comprising data lines with `'\n'` removed from last line.
+	#[must_use]
+	#[inline]
 	pub fn value(&self) -> &str {
 		&self.data[..self.data.len() - 1]
 	}
 	/// Iterator over data lines.
+	#[must_use]
+	#[inline]
 	pub fn lines(&self) -> impl DoubleEndedIterator<Item = &str> {
 		self.data.lines()
 	}
 	/// Iterator over child nodes as `(name, node)` tuples.
+	#[must_use]
+	#[inline]
 	pub fn nodes(&self) -> impl DoubleEndedIterator<Item = (&str, &BmlNode)> + ExactSizeIterator {
 		self.node.iter().map(|(name, node)| (name.as_str(), node))
 	}
 	/// Iterator over child nodes of `name`.
 	///
 	/// Complexity: *O(1)*
+	#[must_use]
+	#[inline]
 	pub fn named(
 		&self,
 		name: &str,
@@ -187,12 +184,19 @@ impl BmlNode {
 	///
 	/// Default is two spaces as in `"  "` and no root indent (`0`). Usual alternative is a
 	/// tabulator as in `"\t"` and no root indent (`0`).
+	///
+	/// # Panics
+	///
+	/// Panics if invoked on non-root node.
+	#[inline]
 	pub fn set_indent(&mut self, string: &'static str, repeat: usize) {
 		match self.kind {
 			Root { ref mut indent } => *indent = BmlIndent { string, repeat },
 			_ => panic!("BML indent can be set for root node only"),
 		}
 	}
+	#[must_use]
+	#[inline]
 	fn root() -> Self {
 		Self {
 			kind: Root {
@@ -201,18 +205,23 @@ impl BmlNode {
 			..Self::default()
 		}
 	}
+	#[must_use]
+	#[inline]
 	fn elem() -> Self {
 		Self {
 			kind: Elem,
 			..Self::default()
 		}
 	}
+	#[must_use]
+	#[inline]
 	fn attr() -> Self {
 		Self {
 			kind: Attr { quote: true },
 			..Self::default()
 		}
 	}
+	#[inline]
 	fn append(&mut self, (name, node): (BmlName, BmlNode)) {
 		self.node.append(name, node);
 	}
@@ -228,28 +237,25 @@ impl BmlNode {
 				}
 			}
 			Elem => {
-				write!(f, "{}{}", indent, name)?;
+				write!(f, "{indent}{name}")?;
 				let indent = indent.next();
 				let mut attrs = 0;
-				for (name, attr) in self.nodes().take_while(|(_name, node)| {
-					if let Attr { .. } = node.kind {
-						true
-					} else {
-						false
-					}
-				}) {
+				for (name, attr) in self
+					.nodes()
+					.take_while(|(_name, node)| matches!(node.kind, Attr { .. }))
+				{
 					attrs += 1;
 					attr.serialize(f, name, indent)?;
 				}
 				let mut lines = self.lines();
-				let line0 = lines.next();
-				let line1 = lines.next();
-				if attrs == 0 && line0.is_some() && line1.is_none() {
-					writeln!(f, ": {}", line0.unwrap())?;
+				let first = lines.next();
+				let second = lines.next();
+				if attrs == 0 && first.is_some() && second.is_none() {
+					writeln!(f, ": {}", first.unwrap())?;
 				} else {
 					writeln!(f)?;
 					for line in self.lines() {
-						writeln!(f, "{}:{}", indent, line)?;
+						writeln!(f, "{indent}:{line}")?;
 					}
 				}
 				for (name, elem) in self.nodes().skip(attrs) {
@@ -257,12 +263,12 @@ impl BmlNode {
 				}
 			}
 			Attr { quote } => {
-				write!(f, " {}", name)?;
+				write!(f, " {name}")?;
 				if let Some(line) = self.lines().next() {
 					if quote {
-						write!(f, "=\"{}\"", line)?;
+						write!(f, "=\"{line}\"")?;
 					} else {
-						write!(f, "={}", line)?;
+						write!(f, "={line}")?;
 					}
 				}
 			}
@@ -272,6 +278,7 @@ impl BmlNode {
 }
 
 impl PartialEq for BmlNode {
+	#[inline]
 	fn eq(&self, other: &BmlNode) -> bool {
 		self.data == other.data && self.node == other.node
 	}
@@ -319,7 +326,7 @@ impl TryFrom<&str> for BmlNode {
 		}
 
 		let mut root = BmlNode::root();
-		for pair in BmlParser::parse(Rule::root, &bml).map_err(|inner| BmlError { inner })? {
+		for pair in BmlParser::parse(Rule::root, bml).map_err(|inner| BmlError { inner })? {
 			match pair.as_rule() {
 				Rule::node => root.append(parse_node(pair)),
 				Rule::EOI => (),
@@ -331,6 +338,7 @@ impl TryFrom<&str> for BmlNode {
 }
 
 impl fmt::Display for BmlNode {
+	#[inline]
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		self.serialize(f, "", BmlIndent::default())
 	}
@@ -338,7 +346,7 @@ impl fmt::Display for BmlNode {
 
 #[cfg(test)]
 mod tests {
-	use super::{BmlNode, TryFrom};
+	use super::BmlNode;
 
 	#[test]
 	fn ordered_iteration() {
