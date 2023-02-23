@@ -29,12 +29,10 @@ include = [
 	"RELEASES.md",
 ]
 
-[badges]
-travis-ci = { repository = "qu1x/bml" }
 
 [dependencies]
 thiserror = "1"
 pest = "2"
 pest_derive = "2"
-smartstring = "0.2"
-ordered-multimap = "0.3"
+smartstring = "1.0.1"
+ordered-multimap = "0.6.0"
