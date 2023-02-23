@@ -1,12 +1,13 @@
 [package]
 name = "bml"
 version = "0.3.0"
+edition = "2021"
 authors = ["Rouven Spreckels <rs@qu1x.dev>"]
-edition = "2018"
 description = "BML Markup Language"
 documentation = "https://docs.rs/bml"
 repository = "https://github.com/qu1x/bml"
 readme = "README.md"
+license = "ISC"
 keywords = [
 	"bml",
 	"markup-language",
@@ -20,7 +21,6 @@ categories = [
 	"encoding",
 	"config",
 ]
-license = "ISC"
 include = [
 	"src/lib.rs",
 	"src/bml.pest",
@@ -29,10 +29,9 @@ include = [
 	"RELEASES.md",
 ]
 
-
 [dependencies]
 thiserror = "1"
 pest = "2"
 pest_derive = "2"
 smartstring = "1.0.1"
-ordered-multimap = "0.6.0"
+ordered-multimap = "0.6"
