@@ -1,3 +1,7 @@
+# Version 0.3.1 (2023-02-23)
+
+  * Update dependencies fixing panic.
+
 # Version 0.3.0 (2020-10-16)
 
   * Update dependencies.
