@@ -1,18 +1,20 @@
-[![Build Status][]](https://travis-ci.org/qu1x/bml)
-[![Downloads][]](https://crates.io/crates/bml)
-[![Version][]](https://crates.io/crates/bml)
-[![Documentation][]](https://docs.rs/bml)
-[![License][]](https://opensource.org/licenses/ISC)
-
-[Build Status]: https://travis-ci.org/qu1x/bml.svg
-[Downloads]: https://img.shields.io/crates/d/bml.svg
-[Version]: https://img.shields.io/crates/v/bml.svg
-[Documentation]: https://docs.rs/bml/badge.svg
-[License]: https://img.shields.io/crates/l/bml.svg
-
 # bml
 
 BML Markup Language
+
+[![Build][]](https://github.com/qu1x/bml/actions/workflows/build.yml)
+[![Documentation][]](https://docs.rs/bml)
+[![Downloads][]](https://crates.io/crates/bml)
+[![Version][]](https://crates.io/crates/bml)
+[![Rust][]](https://www.rust-lang.org)
+[![License][]](https://opensource.org/licenses/ISC)
+
+[Build]: https://github.com/qu1x/bml/actions/workflows/build.yml/badge.svg
+[Documentation]: https://docs.rs/bml/badge.svg
+[Downloads]: https://img.shields.io/crates/d/bml.svg
+[Version]: https://img.shields.io/crates/v/bml.svg
+[Rust]: https://img.shields.io/badge/rust-stable-brightgreen.svg
+[License]: https://img.shields.io/crates/l/bml.svg
 
 [BML] is a simplified [XML] used as static [database], see the [grammar] using [PEG] as input for
 the [pest] parser.
