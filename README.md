@@ -14,39 +14,29 @@
 
 BML Markup Language
 
-[BML] is a simplified [XML] used by the [SNES Preservation Project], see the BML [grammar] using
-[PEG] as input for the [pest] parser.
+[BML] is a simplified [XML] used as static [database], see the [grammar] using [PEG] as input for
+the [pest] parser.
 
 In contrast to its C++ [reference] implementation, this Rust implementation parses indents by
-pushing them on a stack to compare them instead of counting characters (stack-based-indent) and
-it allows tabulators between attributes (tabular-attributes) and between colons and multi-line
-data (tabular-colon-data) supporting tabulator-based along with space-based alignments.
+pushing them on a stack to compare them instead of counting characters (stack-based-indent) and it
+allows tabulators between attributes (tabular-attributes) and between colons and multi-line data
+(tabular-colon-data) supporting tabulator-based along with space-based alignments.
 
 Syntax highlighting is trivial, see [vim-bml].
 
 [BML]: https://news.ycombinator.com/item?id=8645591
 [XML]: https://en.wikipedia.org/wiki/XML
-[SNES Preservation Project]: https://byuu.org/preservation/
-[grammar]: https://github.com/qu1x/bml/blob/master/src/bml.pest
+[database]: https://github.com/ares-emulator/ares/tree/master/mia/Database
+[grammar]: https://github.com/qu1x/bml/blob/main/src/bml.pest
 [PEG]: https://en.wikipedia.org/wiki/Parsing_expression_grammar
 [pest]: https://pest.rs/
-[reference]: https://github.com/higan-emu/higan/blob/master/nall/string/markup/bml.hpp
+[reference]: https://github.com/ares-emulator/ares/blob/master/nall/string/markup/bml.hpp
 [vim-bml]: https://github.com/qu1x/vim-bml
-
-## Usage
-
-This crate works on Rust stable channel by adding it to `Cargo.toml`:
-
-```toml
-[dependencies]
-bml = "0.3"
-```
 
 ## Examples
 
 ```rust
 use bml::BmlNode;
-use std::convert::TryFrom;
 
 let root = BmlNode::try_from(concat!(
 	"server\n",
